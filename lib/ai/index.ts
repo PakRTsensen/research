@@ -1,5 +1,6 @@
-import { openai } from '@ai-sdk/openai';
-import { experimental_wrapLanguageModel as wrapLanguageModel } from 'ai';
+import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenRouter } from '@ai-sdk/openrouter';
+import { createLanguageModel } from 'ai';
 import { openrouter } from '@openrouter/ai-sdk-provider';
 import { togetherai } from '@ai-sdk/togetherai';
 import { deepseek } from '@ai-sdk/deepseek';
@@ -57,9 +58,14 @@ export const customModel = (apiIdentifier: string, forReasoning: boolean = false
   // If it's for reasoning, get the appropriate reasoning model
   const modelId = forReasoning ? getReasoningModel(apiIdentifier) : apiIdentifier;
 
-  if (hasOpenRouterKey) {
-    return wrapLanguageModel({
-      model: openrouter(modelId),
+  const openRouterClient = createOpenRouter({
+    baseURL: 'https://openrouter.ai/api/v1',
+    apiKey: process.env.OPENROUTER_API_KEY,
+  });
+
+  if (hasOpenRouterKey && modelId.startsWith('openrouter:')) {
+    return createLanguageModel({
+      model: openRouterClient(modelId.replace('openrouter:', '')),
       middleware: customMiddleware,
     });
   }
